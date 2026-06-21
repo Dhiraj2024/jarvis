@@ -11,16 +11,14 @@ import pywhatkit as kit
 import psutil
 import sys
 from pywikihow import search_wikihow
-import requests
+
 
 from PyQt5 import QtWidgets, QtCore, QtGui
-from PyQt5.QtCore import QTimer, QTime, QDate, Qt
-from PyQt5.QtGui import QMovie
-from PyQt5.QtCore import *
-from PyQt5.QtGui import *
-from PyQt5.QtWidgets import *
-from PyQt5.uic import loadUiType
+from PyQt5.QtCore import QTimer, QTime, QDate, Qt, QThread
+from PyQt5.QtGui import QMovie, QPixmap
+from PyQt5.QtWidgets import QMainWindow, QApplication
 from jarvisUi import Ui_jarvisUi
+
 
 
 
@@ -58,89 +56,85 @@ class MainThread(QThread):
         self.TaskExecution()
 
 
-
-# Take command.................
     def takecommand(self):
-        
         r = sr.Recognizer()
+
         with sr.Microphone() as source:
+
+
+
             print("Listening...") 
             r.pause_threshold = 1
-            audio = r.listen(source)
+            try:
+                audio = r.listen(source, timeout=5, phrase_time_limit=8)
+            except Exception:
+                return "none"
         try:
-            print("Reognizing...")
+            print("Recognizing...")
             query = r.recognize_google(audio, language='en-in')
             print(f"User said: {query}\n")
+        except Exception:
+            return "none"
+        return query.lower()
 
-        except Exception as e:
-            print(e)
-            print("Please say that again....")
-            return"None"
-        return query  
-
-# Task Execution...............
     def TaskExecution(self):
         wishMe()
         while True:
-            self.query = self.takecommand().lower()
+            self.query = self.takecommand()
 
-            
-            if "hello jarvis" in self.query or "hey" in self.query:
+            if self.query == "none":
+                continue
+
+            if "hello jarvis" in self.query or "hey jarvis" in self.query:
                 speak("hello sir, may i help you with something")
 
-            elif "how are you today" in self.query:
+            elif "how are you" in self.query:
                 speak("i am fine sir, what about you")
                 
-            elif "also good" in self.query or "fine" in self.query:
+            elif "also good" in self.query or "i am fine" in self.query or "i'm fine" in self.query:
                 speak("that's great to hear from you.")
 
             elif "thank you" in self.query or "thanks" in self.query:
                 speak("it's my pleasure sir.")
              
-            elif "goodbye jarvis" in self.query:
-                speak("before living, i would like to thank you to make me your personal assistent. Thankyou very much sir, see you tommorow have a nice day goodbye")
+            elif "goodbye" in self.query or "offline" in self.query or "exit" in self.query:
+                speak("before leaving, i would like to thank you for making me your personal assistant. Thank you very much sir, see you tomorrow, have a nice day, goodbye")
+                os._exit(0)
 
-            elif "introduce yourself" in self.query:
-                speak("ok sir, In the year 1943, i was proposed a model of artifiial neurons by, Warren McCulloch, and Walter pits.Later many companies introduce me as, Google assistent, siri, and  Alexa. I think i got my name through Iron man movie which you are currently using. I am a voice based personal assistent where i uses different technologies to add new unique features. I can automate Task with just one voie command.that's all about me thankyou")        
+            elif "introduce yourself" in self.query or "who are you" in self.query:
+                speak("ok sir, In the year 1943, I was proposed as a model of artificial neurons by Warren McCulloch and Walter Pitts. Later many companies introduced me as Google Assistant, Siri, and Alexa. I think I got my name through the Iron Man movie. I am a voice-based personal assistant where I use different technologies to perform tasks with just one voice command. That's all about me, thank you")        
             
-            elif "jarvis do you know about me" in self.query:
-                speak("Definitely sir, you are rahul karmkar. Son of mr. Basant karmkar and persuing your undergraduate degree in batchler of information technology from,'Marwari College Ranchi' and currently you are living in,'Tiril Road Kokar Ranchi Jharkhand' with your parents")
+            elif "who am i" in self.query or "do you know me" in self.query:
+                speak("Definitely sir, you are Rahul Karmkar. Son of Mr. Basant Karmkar and pursuing your undergraduate degree in Bachelor of Information Technology from Marwari College Ranchi and currently you are living in Tiril Road Kokar Ranchi Jharkhand with your parents")
 
-            elif "let's do some work" in self.query:
-                speak("Okay sir inetiating task execution mode. We are all set to perform task asper your request. what would you like to perform firstli")
+            elif "let's do some work" in self.query or "let's work" in self.query:
+                speak("Okay sir initiating task execution mode. We are all set to perform tasks as per your request. what would you like to perform first?")
 
-            
             elif 'wikipedia' in self.query:
                 speak('searching wikipedia....')
-                self.query = self.query.replace("wikipedia","")
-                results = wikipedia.summary(self.query, sentences=1)
-                speak("According to wikipedia")
-                print(results)
-                speak(results)  
+                search_query = self.query.replace("wikipedia","").strip()
+                try:
+                    results = wikipedia.summary(search_query, sentences=2)
+                    speak("According to wikipedia")
+                    print(results)
+                    speak(results)
+                except Exception:
+                    speak("Sorry sir, I couldn't find anything on wikipedia regarding that.")
 
-
-            elif "jarvis can you help me to draw a mango" in self.query:
-                speak("Definitely sir, inetiating paint which help you to draw anything.")
+            elif "open paint" in self.query or "draw a mango" in self.query:
+                speak("Definitely sir, initiating paint.")
                 npath = "C:\\Windows\\system32\\mspaint.exe"
-                os.startfile(npath)
+                try:
+                    os.startfile(npath)
+                except Exception:
+                    speak("Sorry sir, I couldn't open paint.")
 
-            # elif "close it" in self.query:
-            #     speak("okay sir closing paint")
-            #     os.system("taskkill /f /im mspaint.exe")
-
-            #                                                 elif "open notepad" in self.query or "open notebook" in self.query:
-            #     speak("inetiating notepad, you can type and save your text there")
-            #     try:
-            #         npath = "C:\\Windows\\system32\\notepad.exe"
-            #         os.startfile(npath)
-            #     except Exception:
-            #         os.system("notepad")
-            elif "close it" in self.query:
+            elif "close paint" in self.query:
                 speak("okay sir closing paint")
                 os.system("taskkill /f /im mspaint.exe")
 
             elif "open notepad" in self.query or "open notebook" in self.query:
-                speak("inetiating notepad, you can type and save your text there")
+                speak("initiating notepad, you can type and save your text there")
                 try:
                     npath = "C:\\Windows\\system32\\notepad.exe"
                     os.startfile(npath)
@@ -151,113 +145,101 @@ class MainThread(QThread):
                 speak("okay sir, closing notepad ")
                 os.system("taskkill /f /im notepad.exe")
 
-
-            elif "play music" in self.query:
-                speak("Sure sir, playing your all time favourite song")
+            elif "play music" in self.query or "play song" in self.query:
+                speak("Sure sir, playing your favourite song")
                 music_dir = r"D:\Rahul\my favourite songs"
-                songs = os.listdir(music_dir)
-                print(songs)
-                os.startfile(os.path.join(music_dir,songs[0]))
+                try:
+                    if os.path.exists(music_dir):
+                        songs = [f for f in os.listdir(music_dir) if f.endswith(('.mp3', '.wav', '.m4a'))]
+                        if songs:
+                            os.startfile(os.path.join(music_dir, songs[0]))
+                        else:
+                            speak("No songs found in your music directory.")
+                    else:
+                        speak("Sir, the music directory does not exist.")
+                except Exception:
+                    speak("Sir, I am unable to access the music directory.")
 
-            elif "open youtube and play a video" in self.query:
+            elif "open youtube" in self.query:
                 speak("opening youtube for you sir")
-                webbrowser.open("www.youtube.com")
-                kit.playonyt("tokyo drift base booster")
+                if "play" in self.query:
+                    song_name = self.query.replace("open youtube", "").replace("and play", "").replace("play", "").strip()
+                    if song_name:
+                        kit.playonyt(song_name)
+                    else:
+                        webbrowser.open("www.youtube.com")
+                else:
+                    webbrowser.open("www.youtube.com")
+
+            elif "open chrome" in self.query or "open browser" in self.query:
+                speak("opening browser sir, what should i search?")
+                cm = self.takecommand()
+                if cm != "none":
+                    webbrowser.open(f"https://www.google.com/search?q={cm}")
+                else:
+                    webbrowser.open("https://www.google.com")
+            
+            elif "the time" in self.query:
+                strTime = datetime.datetime.now().strftime("%I:%M %p")
+                speak(f"The time is {strTime}")
+
+            elif "temperature" in self.query:
+                try:
+
+
+
+                    search = "temperature in ranchi"
+                    url = f"https://www.google.com/search?q={search}"
+                    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
+                    r = requests.get(url, headers=headers)
+                    data = BeautifulSoup(r.text, "html.parser")
+                    temp_element = data.find("div", class_="BNeawe")
+                    if temp_element:
+                        temp = temp_element.text
+                        speak(f"Current {search} is {temp}")
+                    else:
+                        speak("Sir, I couldn't find the temperature information on the page.")
+                except Exception as e:
+                    print(f"Temperature error: {e}")
+                    speak("Sir, I am unable to get the temperature right now.")
 
             
-            elif "open chrome" in self.query:
-                speak("opening chrome sir, but what shouild i search there")
-                npath = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
-                os.startfile(npath)
-                cm = self.takecommand().lower()
-                webbrowser.open(f"{cm}")
-
-
-            
-            elif "tell me the time" in self.query or "what's the time jarvis" in self.query:
-                strTime = datetime.datetime.now().strftime("%H:%M:%S")
-                speak(f"The time is {strTime} or you can see on right top of your screen")
-
-
-            elif "temperature" in self.query or " tell me the temperature in ranchi." in self.query:
-                search = "temperature in ranchi"
-                url = f"https://www.google.com/search?q={search}"
-                r = requests.get(url)
-                data = BeautifulSoup(r.text,"html.parser")
-                temp = data.find("div",class_="BNeawe").text 
-                speak(f"current {search} is {temp}, It's quiet a sunny day you can take a ride on your bike")
-            
-            
-            elif "open vs code in new window" in self.query:
-                speak("Here new window comes.")
+            elif "open vs code" in self.query or "open visual studio code" in self.query:
+                speak("Opening VS Code.")
                 path = "C:\\Users\\Pradeep\\AppData\\Local\\Programs\\Microsoft VS Code\\Code.exe"
-                os.startfile(path)
+                try:
+                    os.startfile(path)
+                except Exception:
+                    speak("Sir, VS Code path is not found.")
 
-            
-            # elif "tell me a joke" in self.query:
-            #     joke = pyjokes.get_joke()
-            #     speak(joke)
-                
-                
-            # elif "tell me a joke" in self.query:
-            #     speak("Sure sir, let me tell you a joke.")
-            #     try:
-            #         joke = pyjokes.get_joke()
-            #         print(f"Jarvis: {joke}")  # Ye line terminal mein joke print karegi
-            #         speak(joke)
-            #     except Exception as e:
-            #         print(f"Joke Error: {e}")
-            #         speak("Sorry sir, I am having trouble remembering a joke right now.") 
-            
-            # elif "tell me a joke" in self.query:
-            #     try:
-            #         joke = pyjokes.get_joke()
-            #         # Text ko saaf aur simple string mein convert kar rahe hain
-            #         clean_joke = str(joke) 
-            #         print(f"Jarvis: {clean_joke}")
-                    
-            #         # Pehle intro bolega, phir joke bolega
-            #         speak("Here is a joke for you.")
-            #         speak(clean_joke)
-                    
-            #     except Exception as e:
-            #         print(f"Error: {e}")
-            #         speak("Sorry sir, my joke module is not responding properly.")
-            elif "tell me a joke" in self.query:
+            elif "joke" in self.query:
                 try:
                     joke = pyjokes.get_joke()
                     print(f"Jarvis: {joke}")
-                    
-                    # SAPI5 engine ko atkaane wale symbols ko hatana
                     clean_joke = joke.replace("'", "").replace('"', '').replace("?", ".").replace("-", " ")
-                    
-                    speak("Listen to this one sir.")
+                    speak("Here is a joke for you.")
                     speak(clean_joke)
-                    
-                except Exception as e:
-                    print(f"Error: {e}")
-                    speak("Sorry sir, I cannot read this joke.")        
-                        
+                except Exception:
+                    speak("Sorry sir, I cannot find a joke right now.")
 
-            elif "activate how to do mode" in self.query:
-                speak("Inetiating, collecting all the possible datas which help you to know any thing")
+            elif "how to do" in self.query or "activate how to do mode" in self.query:
+                speak("How to do mode is Activated, please tell me what you want to know.")
                 while True:
-                    speak("How to do mode is Activated,please tell me what you want to know.")
                     how = self.takecommand()
-                    try:
-                        if "exit" in how or "close it" in how:
-                            speak("okay sir, how to do mode is closed")
-                            break
-                        else:
-                            max_results = 1
-                            how_to = search_wikihow(how,max_results)
-                            assert len (how_to)==1
-                            how_to[0].print()
-                            speak(how_to[0].summary)
-                    
-                    except Exception as e:
-                        speak("Sorry sir,i am not able to find this") 
+                    if "exit" in how or "close" in how or "stop" in how:
+                        speak("okay sir, how to do mode is closed")
                         break
+                    elif how != "none":
+                        try:
+                            how_to = search_wikihow(how, 1)
+                            if len(how_to) > 0:
+                                speak(how_to[0].summary)
+                            else:
+                                speak("I couldn't find anything on that.")
+                        except Exception:
+                            speak("Sorry sir, I am not able to find this.")
+
+
                    
             
 
@@ -273,20 +255,27 @@ class Main(QMainWindow):
         self.ui.pushButton_2.clicked.connect(self.close)
     
     def startTask(self):
-        self.ui.movie = QtGui.QMovie("gif\\212508.gif")
-        self.ui.label.setMovie(self.ui.movie)
-        self.ui.movie.start()
-        self.ui.movie = QtGui.QMovie("gif\\00545cb7179c504433d4c8f5e845f286.gif")
-        self.ui.label_2.setMovie(self.ui.movie)
-        self.ui.movie.start()
-        self.ui.movie = QtGui.QMovie("gif\\mk7_Diagnostics_BioFeedback_POV.gif")
-        self.ui.label_5.setMovie(self.ui.movie)
-        self.ui.movie.start()
+        self.movie1 = QtGui.QMovie("gif/212508.gif")
+
+
+
+
+        self.ui.label.setMovie(self.movie1)
+        self.movie1.start()
+        
+        self.movie2 = QtGui.QMovie("gif/00545cb7179c504433d4c8f5e845f286.gif")
+        self.ui.label_2.setMovie(self.movie2)
+        self.movie2.start()
+        
+        self.movie3 = QtGui.QMovie("gif/mk7_Diagnostics_BioFeedback_POV.gif")
+        self.ui.label_5.setMovie(self.movie3)
+        self.movie3.start()
 
         timer = QTimer(self)
         timer.timeout.connect(self.showTime)
         timer.start(1000)
         startExecution.start()
+
 
     def showTime(self):
         current_time = QTime.currentTime()
